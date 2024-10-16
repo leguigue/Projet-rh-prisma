@@ -1,0 +1,18 @@
+model Employe {
+  id           Int         @id @default(autoincrement())
+  firstName    String      @db.VarChar(255)
+  lastName     String      @db.VarChar(255)
+  email        String      @unique @db.VarChar(255)
+  password     String      @db.VarChar(255)
+  fonction     String      @db.VarChar(255)
+  age          Int?
+  sexe         String?     @db.VarChar(50)
+  avatar       String?     @db.Text
+  blames       Blame[]
+  ordinateur   Ordinateur? @relation(fields: [ordinateurId], references: [id])
+  ordinateurId Int?        @unique
+  entreprise   Entreprise  @relation(fields: [entrepriseId], references: [id])
+  entrepriseId Int
+  taches       Tache[]
+  pannes       Panne[]
+}

@@ -1,0 +1,36 @@
+{% extends "../layouts/base.twig" %}
+
+{% block title %}Inscription Entreprise{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/assets/css/register.css">
+{% endblock %}
+
+{% block main %}
+<h1>Inscription Entreprise</h1>
+
+<form action="/register" method="POST">
+	<div>
+		<label for="companyName">Nom de l'entreprise</label>
+		<input type="text" id="companyName" name="name" required>
+	</div>
+	<div>
+		<label for="companyMail">Email</label>
+		<input type="email" id="companyMail" name="mail" required>
+	</div>
+	<div>
+		<label for="companyPassword">Mot de passe</label>
+		<input type="password" id="companyPassword" name="password" required>
+	</div>
+	<div>
+		<label for="companyDirector">Nom du directeur (facultatif)</label>
+		<input type="text" id="companyDirector" name="director">
+	</div>
+	<div>
+		<label for="companySiret">Numéro SIRET</label>
+		<input type="text" id="companySiret" name="siret" required pattern="\d{14}" title="Le numéro SIRET doit contenir 14 chiffres">
+	</div>
+	<button type="submit">Inscrire l'entreprise</button>
+</form>
+
+{% endblock %}

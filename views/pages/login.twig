@@ -1,0 +1,66 @@
+{% extends "../layouts/base.twig" %}
+
+{% block title %}Login
+{% endblock %}
+
+{% block style %}
+	<link rel="stylesheet" href="/assets/css/login.css">
+{% endblock %}
+{% block main %}
+	<main>
+		
+		<section>
+			<div>
+				<h2>Connexion</h2>
+				<button id="btnEntreprise">Connexion Entreprise</button>
+				<button id="btnEmploye">Connexion Employé</button>
+			</div>
+		</section>
+
+
+		<div id="modalEntreprise" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Connexion Entreprise</h2>
+				<form action="/login" method="post">
+					<div>
+						<label for="siret">Numéro SIRET</label>
+						<input type="text" name="siret" id="siret" required pattern="\d{14}" title="Le numéro SIRET doit contenir 14 chiffres">
+					</div>
+					<div>
+						<label for="password">Mot de passe</label>
+						<input type="password" name="password" id="password" required>
+					</div>
+					<button type="submit">Se connecter</button>
+				</form>
+				{% if error %}
+					<p class="error">{{ error }}</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<div id="modalEmploye" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Connexion Employé</h2>
+				<form action="/employe-login" method="post">
+					<div>
+						<label for="email">Email</label>
+						<input type="email" name="email" id="email" required>
+					</div>
+					<div>
+						<label for="passwordEmploye">Mot de passe</label>
+						<input type="password" name="password" id="passwordEmploye" required>
+					</div>
+					<button type="submit">Se connecter</button>
+				</form>
+				{% if error %}
+					<p class="error">{{ error }}</p>
+				{% endif %}
+			</div>
+		</div>
+	</main>
+{% endblock %}
+{% block script %}
+	<script src="/assets/js/main.js"></script>
+{% endblock %}

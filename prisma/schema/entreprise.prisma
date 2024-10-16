@@ -1,0 +1,13 @@
+model Entreprise {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(255)
+  mail        String       @unique @db.VarChar(255)
+  password    String       @db.VarChar(255)
+  director    String       @db.VarChar(255)
+  siret       String       @unique @db.Char(14)
+  employes    Employe[]
+  ordinateurs Ordinateur[]
+  blames      Blame[]
+  taches      Tache[]
+  pannes       Panne[]
+}

@@ -1,0 +1,26 @@
+{% block style %}
+	<link rel="stylesheet" href="/assets/css/header.css">
+{% endblock %}
+
+<header>
+	<h1>HumanHub</h1>
+	<nav>
+		<ul>
+			<li>
+				<a href="/logout" class="logout-link">Déconnexion</a>
+			</li>
+			{% if entreprise %}
+				<li>
+					<a href="/">Accueil</a>
+				</li>
+			{% else %}
+				<li>
+					<a href="/register">Inscription</a>
+				</li>
+				<li>
+					<a href="/login">Connexion</a>
+				</li>
+			{% endif %}
+		</ul>
+	</nav>
+</header>

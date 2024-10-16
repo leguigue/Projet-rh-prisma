@@ -1,0 +1,447 @@
+{% extends "layouts/base.twig" %}
+
+{% block title %}
+	{% if user.role == 'entreprise' %}
+		Dashboard -
+		{{ user.name }}
+	{% else %}
+		Accueil -
+		{{ user.firstName }}
+		{{ user.lastName }}
+	{% endif %}
+{% endblock %}
+
+{% block style %}
+	<link rel="stylesheet" href="/assets/css/style.css">
+{% endblock %}
+
+{% block main %}
+	<div class="{% if user.role == 'entreprise' %}dashboard{% else %}employee-home{% endif %}">
+		{% if user.role == 'entreprise' %}
+			<h1 class="dashboard-title">Dashboard de
+				{{ user.name }}</h1>
+
+			<div id="btn-container-desktop">
+				<button class="active">Dashboard</button>
+				<button>Gestion des Employés</button>
+				<button>Gestion des Ordinateurs</button>
+				<button>Tâches en cours</button>
+				<button>Gestion des Pannes</button>
+			</div>
+
+			<section class="dashboard-content">
+				<div class="dashboard-summary">
+					<h2>Résumé</h2>
+					<div id="summaryList">
+						<p>Nombre total d'employés :
+							{{ user.employes|length }}</p>
+						<p>Nombre d'ordinateurs :
+							{{ user.ordinateurs|length }}</p>
+						<p>Tâches en cours :
+							{{ tachesEnCours }}</p>
+					</div>
+				</div>
+
+				<div class="dashboard-employees">
+					<h2>Liste des employés</h2>
+					<ul id="employeeList">
+						{% for employe in user.employes %}
+							<li>
+								{{ employe.firstName }}
+								{{ employe.lastName }}
+								-
+								{{ employe.fonction }}
+								{% if employe.ordinateur %}
+									(Ordinateur:
+									{{ employe.ordinateur.nom }})
+								{% else %}
+									(Pas d'ordinateur)
+								{% endif %}
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+
+				<div class="dashboard-computers">
+					<h2>Liste des ordinateurs</h2>
+					<ul id="computerList">
+						{% for ordinateur in user.ordinateurs %}
+							<li>
+								{{ ordinateur.nom }}
+								({{ ordinateur.macAddress }})
+								{% if ordinateur.employe %}
+									- Assigné à :
+									{{ ordinateur.employe.firstName }}
+									{{ ordinateur.employe.lastName }}
+								{% else %}
+									- Non assigné
+								{% endif %}
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+			</section>
+
+			<section class="employees">
+				<h2>Gestion des Employés</h2>
+				<input type="text" id="searchEmployees" placeholder="Rechercher un employé...">
+				<div class="filters">
+					<label for="fonction-filter">Filtrer par fonction:</label>
+					<select id="fonction-filter">
+						<option value="">Toutes les fonctions</option>
+						{% for fonction in fonctions %}
+							<option value="{{ fonction }}">{{ fonction }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<ul class="employee-list">
+					{% for employe in user.employes %}
+						<li class="employee-item" data-employee-id="{{ employe.id }}">
+							{{ employe.firstName }}
+							{{ employe.lastName }}
+							-
+							<span class="employee-fonction">{{ employe.fonction }}</span>
+							<span class="ordinateur-info">
+								{% if employe.ordinateur %}
+									(Ordinateur:
+									{{ employe.ordinateur.nom }})
+								{% else %}
+									(Pas d'ordinateur)
+								{% endif %}
+							</span>
+							<button onclick="openEmployeProfileModal({{ employe.id }})">Voir profil</button>
+							<button onclick="openEditEmployeModal({{ employe.id }})">Modifier profil</button>
+							<button onclick="openAssignTaskModal({{ employe.id }})">Assigner une tâche</button>
+							<button onclick="openBlameModal({{ employe.id }})">Ajouter un blâme</button>
+							<form action="/supprimer-employe/{{ employe.id }}" method="POST" style="display: inline;">
+								<button type="submit" class="delete-button">Supprimer</button>
+							</form>
+							<p>Nombre de blâmes :
+								{{ employe.blames|length }}</p>
+						</li>
+					{% endfor %}
+				</ul>
+
+				<h3>Ajouter un employé</h3>
+				<form action="/ajouter-employe" method="POST" class="add-employee-form" enctype="multipart/form-data">
+					<label for="employe-firstName">Prénom</label>
+					<input id="employe-firstName" type="text" name="firstName" placeholder="Prénom" required>
+					<label for="employe-lastName">Nom</label>
+					<input id="employe-lastName" type="text" name="lastName" placeholder="Nom" required>
+					<label for="employe-email">Email</label>
+					<input id="employe-email" type="email" name="email" placeholder="Email" required>
+					<label for="employe-fonction">Fonction</label>
+					<input id="employe-fonction" type="text" name="fonction" placeholder="Fonction" required>
+					<label for="employe-password">Mot de passe</label>
+					<input id="employe-password" type="password" name="password" placeholder="Mot de passe" required>
+					<label for="employe-age">Age</label>
+					<input id="employe-age" type="number" name="age" placeholder="Age" required>
+					<label for="employe-sexe">Genre/Sexe</label>
+					<select id="employe-sexe" name="sexe" required onchange="toggleAutreSexe(this, 'autre-sexe')">
+						<option value="M">Homme</option>
+						<option value="F">Femme</option>
+						<option value="autre">Autre</option>
+					</select>
+					<input id="autre-sexe" type="text" name="autreSexe" placeholder="Spécifiez le genre/sexe" style="display: none;">
+					<label for="employe-avatar">Avatar</label>
+					<input id="employe-avatar" type="file" name="avatar" accept="image/*">
+					<button type="submit">Ajouter</button>
+				</form>
+			</section>
+
+			<section class="computers">
+				<h2>Gestion des Ordinateurs</h2>
+				<div class="filters">
+					<label for="ordinateur-filter">Filtrer :</label>
+					<select id="ordinateur-filter">
+						<option value="tous">Tous les ordinateurs</option>
+						<option value="assignes">Ordinateurs assignés</option>
+						<option value="non-assignes">Ordinateurs non assignés</option>
+					</select>
+				</div>
+				<input type="text" id="searchComputers" placeholder="Rechercher un ordinateur...">
+				<ul class="computer-list">
+					{% for ordinateur in user.ordinateurs %}
+						<li class="computer-item {% if ordinateur.enPanne %}en-panne{% endif %}" data-ordinateur-id="{{ ordinateur.id }}">
+							<div class="ordinateur-info">
+								<span class="status-indicator {% if ordinateur.enPanne %}red{% else %}green{% endif %}"></span>
+								<strong>{{ ordinateur.nom }}</strong>
+								({{ ordinateur.macAddress }})
+								{% if ordinateur.employe %}
+									- Assigné à :
+									<span class="assigned-employee">{{ ordinateur.employe.firstName }}
+										{{ ordinateur.employe.lastName }}</span>
+									<button class="desassign-button" onclick="desassignerOrdinateur({{ ordinateur.employe.id }}, {{ ordinateur.id }})">
+										Désassigner
+									</button>
+								{% else %}
+									-
+									<span class="assigned-employee">Non assigné</span>
+								{% endif %}
+							</div>
+							{% if ordinateur.enPanne %}
+								<span class="panne-indicator">En panne depuis
+									{{ ordinateur.datePane|date("d/m/Y H:i") }}</span>
+							{% endif %}
+							<div class="ordinateur-actions">
+								<select class="employe-select" data-ordinateur-id="{{ ordinateur.id }}">
+									<option value="">Sélectionner un employé</option>
+									{% for employe in user.employes %}
+										<option value="{{ employe.id }}" {% if ordinateur.employe and ordinateur.employe.id == employe.id %} selected {% endif %}>
+											{{ employe.firstName }}
+											{{ employe.lastName }}
+										</option>
+									{% endfor %}
+								</select>
+								<form action="/supprimer-ordinateur/{{ ordinateur.id }}" method="POST" class="delete-form">
+									<button type="submit" class="delete-button">Supprimer</button>
+								</form>
+							</div>
+						</li>
+					{% endfor %}
+				</ul>
+
+				<h3>Ajouter un ordinateur</h3>
+				<form action="/ajouter-ordinateur" method="POST" class="add-computer-form">
+					<label for="ordinateur-nom">Nom de l'ordinateur</label>
+					<input id="ordinateur-nom" type="text" name="nom" placeholder="Nom de l'ordinateur" required>
+					<label for="ordinateur-macAddress">Adresse MAC</label>
+					<input id="ordinateur-macAddress" type="text" name="macAddress" placeholder="XX:XX:XX:XX:XX:XX" required pattern="([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})" title="Format d'adresse MAC valide : XX:XX:XX:XX:XX:XX">
+					<button type="submit">Ajouter l'ordinateur</button>
+				</form>
+			</section>
+
+			<section class="tasks">
+				<h2>Tâches en cours</h2>
+				{% set tachesEnCours = false %}
+				{% for employe in user.employes %}
+					{% for tache in employe.taches %}
+						{% if not tache.completed %}
+							{% set tachesEnCours = true %}
+							<h3>{{ employe.firstName }}
+								{{ employe.lastName }}</h3>
+							<ul>
+								<li>
+									{{ tache.description }}
+									(Date limite:
+									{{ tache.deadline|date("d/m/Y") }})
+									<form action="/terminer-tache/{{ tache.id }}" method="POST" style="display: inline;">
+										<button type="submit">Marquer comme terminée</button>
+									</form>
+								</li>
+							</ul>
+						{% endif %}
+					{% endfor %}
+				{% endfor %}
+				{% if not tachesEnCours %}
+					<p>Aucune tâche en cours.</p>
+				{% endif %}
+			</section>
+
+			<section class="pannes">
+				<h2>Gestion des Pannes</h2>
+				<ul class="panne-list">
+					{% for ordinateur in user.ordinateurs %}
+						{% if ordinateur.enPanne %}
+							<li class="panne-item">
+								<strong>{{ ordinateur.nom }}</strong>
+								({{ ordinateur.macAddress }})
+								{% if ordinateur.employe %}
+									- Assigné à :
+									{{ ordinateur.employe.firstName }}
+									{{ ordinateur.employe.lastName }}
+								{% else %}
+									- Non assigné
+								{% endif %}
+								<p>En panne depuis :
+									{{ ordinateur.datePane|date("d/m/Y H:i") }}</p>
+								{% if ordinateur.latitude and ordinateur.longitude %}
+									<a href="https://www.google.com/maps?q={{ ordinateur.latitude }},{{ ordinateur.longitude }}" target="_blank">Voir sur la carte</a>
+								{% endif %}
+								<form action="/resoudre-panne/{{ ordinateur.id }}" method="POST" style="display: inline;">
+									<button type="submit">Marquer comme résolu</button>
+								</form>
+							</li>
+						{% endif %}
+					{% endfor %}
+				</ul>
+				{% set ordinateursEnPanne = [] %}
+				{% for o in user.ordinateurs %}
+					{% if o.enPanne %}
+						{% set ordinateursEnPanne = ordinateursEnPanne|merge([o]) %}
+					{% endif %}
+				{% endfor %}
+
+				{% if ordinateursEnPanne|length == 0 %}
+					<p>Aucune panne déclarée actuellement.</p>
+				{% endif %}
+			</section>
+		{% else %}
+			<h1>Bienvenue,
+				{{ user.firstName }}
+				{{ user.lastName }}</h1>
+
+			<section class="employee-info">
+				<h2>Vos informations</h2>
+				{% if user.avatar %}
+					<img src="/{{ user.avatar }}" alt="Avatar" class="employee-avatar" style="max-width: 50px; max-height: 50px;">
+				{% endif %}
+				<p>Email :
+					{{ user.email }}</p>
+				<p>Fonction :
+					{{ user.fonction }}</p>
+				<p>Age :
+					{{ user.age }}</p>
+				<p>Genre :
+					{{ user.sexe }}</p>
+				<form action="/update-avatar" method="POST" enctype="multipart/form-data">
+					<input type="file" name="avatar" accept="image/*">
+					<button type="submit">Mettre à jour l'avatar</button>
+				</form>
+			</section>
+
+			<section class="employee-computer">
+				<h2>Votre ordinateur</h2>
+				{% if employe.ordinateur %}
+					<p>Nom de l'ordinateur :
+						{{ employe.ordinateur.nom }}</p>
+					<p>Adresse MAC :
+						{{ employe.ordinateur.macAddress }}</p>
+					<form action="/employe/declarer-panne" method="POST">
+						<button type="submit" {% if employe.ordinateur.enPanne %} disabled {% endif %}>
+							Déclarer une panne
+						</button>
+					</form>
+					{% if employe.ordinateur.enPanne %}
+						<p class="panne-info">Panne déclarée le
+							{{ employe.ordinateur.datePane|date("d/m/Y à H:i") }}</p>
+					{% endif %}
+				{% else %}
+					<p>Aucun ordinateur assigné.</p>
+				{% endif %}
+			</section>
+
+			<section class="employee-tasks">
+				<h2>Vos tâches</h2>
+				<ul>
+					{% for tache in user.taches %}
+						<li>
+							{% if tache.fichierPath %}
+								<a href="/{{ tache.fichierPath }}" target="_blank">Fichier de tâche</a>
+							{% else %}
+								{{ tache.description }}
+							{% endif %}
+							(Date limite:
+							{{ tache.deadline|date("d/m/Y") }})
+							{% if not tache.completed %}
+								<form action="/valider-tache/{{ tache.id }}" method="POST" enctype="multipart/form-data">
+									<textarea name="commentaire" placeholder="Commentaire (optionnel)"></textarea>
+									<input type="file" name="fichier">
+									<button type="submit">Tâche accomplie</button>
+								</form>
+							{% else %}
+								<span class="completed-task">Terminée</span>
+								{% if tache.commentaire %}
+									<p>Commentaire:
+										{{ tache.commentaire }}</p>
+								{% endif %}
+								{% if tache.fichierCompletionPath %}
+									<a href="/{{ tache.fichierCompletionPath }}" target="_blank">Fichier de complétion</a>
+								{% endif %}
+							{% endif %}
+						</li>
+					{% endfor %}
+				</ul>
+			</section>
+
+			<section class="employee-blames">
+				<h2>Blâmes reçus</h2>
+				<ul>
+					{% for blame in user.blames %}
+						<li>
+							{{ blame.description }}
+							(Date :
+							{{ blame.date|date("d/m/Y") }})
+						</li>
+					{% endfor %}
+				</ul>
+			</section>
+
+		{% endif %}
+	</div>
+
+	{% if user.role == 'entreprise' %}
+		<div id="employeProfileModal" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Profil de l'employé</h2>
+				<div id="employeProfileContent"></div>
+			</div>
+		</div>
+
+		<div id="editEmployeModal" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Modifier le profil de l'employé</h2>
+				<form id="editEmployeForm" action="/modifier-employe" method="POST" enctype="multipart/form-data">
+					<input type="hidden" name="employeId" id="editEmployeId">
+					<label for="edit-firstName">Prénom</label>
+					<input id="edit-firstName" type="text" name="firstName" required>
+					<label for="edit-lastName">Nom</label>
+					<input id="edit-lastName" type="text" name="lastName" required>
+					<label for="edit-email">Email</label>
+					<input id="edit-email" type="email" name="email" required>
+					<label for="edit-fonction">Fonction</label>
+					<input id="edit-fonction" type="text" name="fonction" required>
+					<label for="edit-age">Age</label>
+					<input id="edit-age" type="number" name="age" required>
+					<label for="edit-sexe">Genre/Sexe</label>
+					<select id="edit-sexe" name="sexe" required onchange="toggleAutreSexe(this, 'edit-autre-sexe')">
+						<option value="M">Homme</option>
+						<option value="F">Femme</option>
+						<option value="autre">Autre</option>
+					</select>
+					<input id="edit-autre-sexe" type="text" name="autreSexe" placeholder="Spécifiez le genre/sexe" style="display: none;">
+					<label for="edit-avatar">Avatar</label>
+					<input id="edit-avatar" type="file" name="avatar" accept="image/*">
+					<button type="submit">Mettre à jour</button>
+				</form>
+			</div>
+		</div>
+
+		<div id="assignTaskModal" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Assigner une tâche</h2>
+				<form id="assignTaskForm" action="/assigner-tache" method="POST" enctype="multipart/form-data">
+					<input type="hidden" id="assignTaskEmployeId" name="employeId">
+					<label for="assign-task-description">Description de la tâche</label>
+					<textarea id="assign-task-description" name="description"></textarea>
+					<label for="assign-task-file">Fichier de tâche (optionnel)</label>
+					<input type="file" id="assign-task-file" name="fichier">
+					<label for="assign-task-deadline">Date limite</label>
+					<input id="assign-task-deadline" type="date" name="deadline" required>
+					<button type="submit">Assigner la tâche</button>
+				</form>
+			</div>
+		</div>
+
+		<div id="blameModal" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Ajouter un blâme</h2>
+				<form id="blameForm">
+					<input type="hidden" id="blameEmployeId" name="employeId">
+					<label for="blame-description">Description du blâme</label>
+					<textarea id="blame-description" name="description" required></textarea>
+					<button type="submit">Ajouter le blâme</button>
+				</form>
+			</div>
+		</div>
+
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+	<script src="/assets/js/main.js"></script>
+{% endblock %}

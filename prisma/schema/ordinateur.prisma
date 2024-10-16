@@ -1,0 +1,14 @@
+model Ordinateur {
+  id           Int        @id @default(autoincrement())
+  nom          String     @db.VarChar(255)
+  macAddress   String     @unique @db.VarChar(17)
+  employe      Employe? @relation
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id])
+  entrepriseId Int
+  enPanne      Boolean    @default(false)
+  datePane     DateTime?
+  latitude     Float?
+  longitude    Float?
+  adresse      String?    @db.Text
+  pannes       Panne[]
+}
