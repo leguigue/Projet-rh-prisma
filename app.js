@@ -3,15 +3,15 @@ const entrepriseRouter = require('./router/entrepriseRouter');
 const employeRouter = require("./router/employeRouter");
 const session = require('express-session');
 const path = require('path');
+
 const authguard = require('./services/authguard'); 
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const app = express();
-
+require("dotenv").config()
 app.set('view engine', 'twig');
 app.set('views', path.join(__dirname, 'views'));
-
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
@@ -80,7 +80,7 @@ app.get('/home', authguard, async (req, res) => {
 app.use('/', entrepriseRouter);
 app.use('/', employeRouter);
 
-app.listen(3000, (err) => {
+app.listen(process.env.PORT, (err) => {
     if (err) {
         console.log(err);
     } else {
